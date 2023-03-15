@@ -260,11 +260,17 @@ public class SpringApplication {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+		//	根据提供类名区分 非web环境、web环境、reactive环境
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
+		//	获取META-INF/spring.factories的配置类并实例化，可能存在多个jar包中
+		//	初始化BootstrapRegistry
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
+		//	初始化上下文Context
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
+		//	监听器
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
+		//	启动类
 		this.mainApplicationClass = deduceMainApplicationClass();
 	}
 
