@@ -1,6 +1,7 @@
 package com.spring.boot.local;
 
 import com.spring.boot.local.control.Test;
+import com.spring.boot.local.initializer.MyApplicationContextInitializerImportByMainMethod;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -9,8 +10,14 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class SpringBootLocalApplication {
 
 	public static void main(String[] args) {
-		// 测试一下
-		ConfigurableApplicationContext context = SpringApplication.run(new Class<?>[]{SpringBootLocalApplication.class, Test.class}, args);
+
+		//SpringApplication.run(SpringBootLocalApplication.class, args);
+
+		SpringApplication springApplication = new SpringApplication(SpringBootLocalApplication.class, Test.class);
+		springApplication.addInitializers(new MyApplicationContextInitializerImportByMainMethod());
+		ConfigurableApplicationContext context = springApplication.run(args);
+		System.out.println(context.isActive());
+
 	}
 
 }
