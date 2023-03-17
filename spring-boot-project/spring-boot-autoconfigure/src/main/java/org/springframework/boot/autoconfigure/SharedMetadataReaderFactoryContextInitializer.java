@@ -48,6 +48,16 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
  * {@link CachingMetadataReaderFactory} between the
  * {@link ConfigurationClassPostProcessor} and Spring Boot.
  *
+ * <p>
+ * {@link ApplicationContextInitializer} 在
+ * {@link ConfigurationClassPostProcessor} 和 Spring Boot
+ * 之间创建一个共享的 {@link CachingMetadataReaderFactory}。
+ * </p>
+ *
+ * <p>
+ * {@link BeanFactoryPostProcessor} Spring中容器功能的基础,用于存放所有已经加载的bean
+ * </p>
+ *
  * @author Phillip Webb
  * @author Dave Syer
  */
@@ -94,7 +104,11 @@ class SharedMetadataReaderFactoryContextInitializer
 
 		@Override
 		public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
+			// 注册bean
+			// name = org.springframework.boot.autoconfigure.internalCachingMetadataReaderFactory
+			// instance = SharedMetadataReaderFactoryBean::new
 			register(registry);
+			// 将这个bean设置到：org.springframework.context.annotation.internalConfigurationAnnotationProcessor这个bean属性里
 			configureConfigurationClassPostProcessor(registry);
 		}
 
@@ -173,6 +187,8 @@ class SharedMetadataReaderFactoryContextInitializer
 
 	/**
 	 * {@link FactoryBean} to create the shared {@link MetadataReaderFactory}.
+	 * {@link FactoryBean} 用于创建Bean
+	 *
 	 */
 	static class SharedMetadataReaderFactoryBean
 			implements FactoryBean<ConcurrentReferenceCachingMetadataReaderFactory>, BeanClassLoaderAware,

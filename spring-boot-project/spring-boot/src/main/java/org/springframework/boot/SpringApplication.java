@@ -297,26 +297,39 @@ public class SpringApplication {
 	 */
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
+		//	什么鬼容器？
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
+		//	springboot容器
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
+		//	从spring.factories读取SpringApplicationRunListener.class
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+		//	发布ApplicationStartingEvent事件
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+			//	发布ApplicationEnvironmentPreparedEvent事件，加载application配置文件
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+			//	忽略配置spring.beaninfo.ignore指定的bean
 			configureIgnoreBeanInfo(environment);
+			//	打印banner，可多个，banner.img或banner.txt
 			Banner printedBanner = printBanner(environment);
+			//	▲创建容器上下文Context，初始化Scanner和Reader  AnnotationConfigServletWebServerApplicationContext
 			context = createApplicationContext();
 			context.setApplicationStartup(this.applicationStartup);
+			//	▲刷新容器前准备
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+			//	▲刷新容器，加载bean
 			refreshContext(context);
 			afterRefresh(context, applicationArguments);
 			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
 			if (this.logStartupInfo) {
+				//	打印日志
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
 			}
+			//	发布ApplicationStartedEvent事件
 			listeners.started(context, timeTakenToStartup);
+			//	回调函数，调用ApplicationRunner和CommandLineRunner的run方法
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
@@ -325,6 +338,7 @@ public class SpringApplication {
 		}
 		try {
 			Duration timeTakenToReady = Duration.ofNanos(System.nanoTime() - startTime);
+			//	发布ApplicationReadyEvent事件
 			listeners.ready(context, timeTakenToReady);
 		}
 		catch (Throwable ex) {
@@ -376,8 +390,11 @@ public class SpringApplication {
 			ApplicationArguments applicationArguments, Banner printedBanner) {
 		context.setEnvironment(environment);
 		postProcessApplicationContext(context);
+		//	执行ApplicationContextInitializer.initialize(context)
 		applyInitializers(context);
+		//	发布ApplicationContextInitializedEvent事件
 		listeners.contextPrepared(context);
+		//	发布BootstrapContextClosedEvent事件
 		bootstrapContext.close(context);
 		if (this.logStartupInfo) {
 			logStartupInfo(context.getParent() == null);
@@ -404,6 +421,7 @@ public class SpringApplication {
 		Set<Object> sources = getAllSources();
 		Assert.notEmpty(sources, "Sources must not be empty");
 		load(context, sources.toArray(new Object[0]));
+		//	发布ApplicationPreparedEvent事件
 		listeners.contextLoaded(context);
 	}
 
@@ -569,6 +587,7 @@ public class SpringApplication {
 	 * @see #setApplicationContextFactory(ApplicationContextFactory)
 	 */
 	protected ConfigurableApplicationContext createApplicationContext() {
+		//	new DefaultApplicationContextFactory()
 		return this.applicationContextFactory.create(this.webApplicationType);
 	}
 
