@@ -262,13 +262,12 @@ public class SpringApplication {
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
 		//	根据提供类名区分 非web环境、web环境、reactive环境
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
-		//	获取META-INF/spring.factories的配置类并实例化，可能存在多个jar包中
-		//	初始化BootstrapRegistry
+		//	获取META-INF/spring.factories的配置类BootstrapRegistryInitializer并实例化
 		this.bootstrapRegistryInitializers = new ArrayList<>(
 				getSpringFactoriesInstances(BootstrapRegistryInitializer.class));
-		//	初始化上下文Context
+		//	获取META-INF/spring.factories的配置类ApplicationContextInitializer并实例化
 		setInitializers((Collection) getSpringFactoriesInstances(ApplicationContextInitializer.class));
-		//	监听器
+		//	获取META-INF/spring.factories的配置类ApplicationListener并实例化
 		setListeners((Collection) getSpringFactoriesInstances(ApplicationListener.class));
 		//	启动类
 		this.mainApplicationClass = deduceMainApplicationClass();
@@ -297,12 +296,12 @@ public class SpringApplication {
 	 */
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
-		//	什么鬼容器？
+		//	什么容器？
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		//	springboot容器
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
-		//	从spring.factories读取SpringApplicationRunListener.class
+		//	从spring.factories读取SpringApplicationRunListener.class-->EventPublishingRunListener.class
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 		//	发布ApplicationStartingEvent事件
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
@@ -321,6 +320,7 @@ public class SpringApplication {
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
 			//	▲刷新容器，加载bean
 			refreshContext(context);
+			//	扩展用
 			afterRefresh(context, applicationArguments);
 			Duration timeTakenToStartup = Duration.ofNanos(System.nanoTime() - startTime);
 			if (this.logStartupInfo) {
@@ -360,10 +360,13 @@ public class SpringApplication {
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		ConfigurationPropertySources.attach(environment);
+		// 广播事件，读取配置文件application.properties
 		listeners.environmentPrepared(bootstrapContext, environment);
+		//	"defaultProperties" 放在最后，优先级最低
 		DefaultPropertiesPropertySource.moveToEnd(environment);
 		Assert.state(!environment.containsProperty("spring.main.environment-prefix"),
 				"Environment prefix cannot be set via properties.");
+		//	和SpringApplication绑定
 		bindToSpringApplication(environment);
 		if (!this.isCustomEnvironment) {
 			EnvironmentConverter environmentConverter = new EnvironmentConverter(getClassLoader());
@@ -543,6 +546,7 @@ public class SpringApplication {
 	 * @see #configureEnvironment(ConfigurableEnvironment, String[])
 	 */
 	protected void configureProfiles(ConfigurableEnvironment environment, String[] args) {
+		System.out.println("配置Profiles................什么也没干");
 	}
 
 	private void configureIgnoreBeanInfo(ConfigurableEnvironment environment) {
