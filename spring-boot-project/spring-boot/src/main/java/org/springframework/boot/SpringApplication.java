@@ -294,22 +294,28 @@ public class SpringApplication {
 	 * @param args the application arguments (usually passed from a Java main method)
 	 * @return a running {@link ApplicationContext}
 	 */
-	public ConfigurableApplicationContext run(String... args) {
+	public ConfigurableApplicationContext
+	run(String... args) {
+		//	纳秒
 		long startTime = System.nanoTime();
-		//	什么容器？
+		//	构造DefaultBootstrapContext，并用BootstrapRegistryInitializer进行初始化
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 		//	springboot容器
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
-		//	从spring.factories读取SpringApplicationRunListener.class-->EventPublishingRunListener.class
+		//	从spring.factories读取SpringApplicationRunListener.class -> EventPublishingRunListener.class（唯一实现），
+		//	构造SpringApplicationRunListeners，EventPublishingRunListener包含SpringApplication的引用
+		//	SpringApplicationRunListeners -> EventPublishingRunListener -> SpringApplication
 		SpringApplicationRunListeners listeners = getRunListeners(args);
-		//	发布ApplicationStartingEvent事件
+		//	发布ApplicationStartingEvent事件, EventPublishingRunListener.starting(bootstrapContext)
+		//	最终调用ApplicationListener.onApplicationEvent(ApplicationStartingEvent event)，主要配置LoggingApplicationListener#LoggingSystem
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
+			//	构造环境参数
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 			//	发布ApplicationEnvironmentPreparedEvent事件，加载application配置文件
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
-			//	忽略配置spring.beaninfo.ignore指定的bean
+			//	忽略配置"spring.beaninfo.ignore"指定的bean
 			configureIgnoreBeanInfo(environment);
 			//	打印banner，可多个，banner.img或banner.txt
 			Banner printedBanner = printBanner(environment);
@@ -357,8 +363,12 @@ public class SpringApplication {
 	private ConfigurableEnvironment prepareEnvironment(SpringApplicationRunListeners listeners,
 			DefaultBootstrapContext bootstrapContext, ApplicationArguments applicationArguments) {
 		// Create and configure the environment
+		// 构造环境 spring.factories -> ApplicationContextFactory#createEnvironment() -> new ApplicationServletEnvironment()
+		// 初始化4个PropertySources(2个system,2个servlet)，defaultProfiles="default"
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
+		// 配置转换器，environment.setConversionService(new ApplicationConversionService())
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
+		// 添加"configurationProperties"->PropertySources(addFirst)，包含上面4个PropertySource
 		ConfigurationPropertySources.attach(environment);
 		// 广播事件，读取配置文件application.properties
 		listeners.environmentPrepared(bootstrapContext, environment);
